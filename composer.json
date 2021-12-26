@@ -1,0 +1,22 @@
+{
+    "name": "matyo91/warship",
+    "description": "Warship Game",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Warship\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Mathieu Ledru",
+            "email": "matyo91@darkwood.fr"
+        }
+    ],
+    "require": {
+        "php": ">=8.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5"
+    }
+}
