@@ -33,8 +33,8 @@ class Client {
 
     public function displayBoard(string $player = 'my')
     {
-        for($j = 0; $j < 10; $j++) {
-            for($i = 0; $i < 10; $i++) {
+        for($i = 0; $i < 10; $i++) {
+            for($j = 0; $j < 10; $j++) {
                 $coord = $this->getCoord($i, $j);
                 echo $this->boards[$player][$coord];
             }
@@ -85,7 +85,7 @@ class Client {
 
     public function canPlaceBoat(int $x, int $y, int $length, bool $isHorizontal): bool {
         for($i = 0; $i < $length; $i++) {
-            $coord = $isHorizontal ? $this->getCoord($x + $length, $y) : $this->getCoord($x, $y + $length);
+            $coord = $isHorizontal ? $this->getCoord($x, $y + $i) : $this->getCoord($x + $i, $y);
             if(!isset($this->boards['my'][$coord]) || $this->boards['my'][$coord] !== self::BOARD_WATER) {
                 return false;
             }
@@ -96,19 +96,21 @@ class Client {
 
     public function placeBoat(int $x, int $y, int $length, bool $isHorizontal) {
         for($i = 0; $i < $length; $i++) {
-            $coord = $isHorizontal ? $this->getCoord($x + $i, $y) : $this->getCoord($x, $y + $i);
+            $coord = $isHorizontal ? $this->getCoord($x, $y + $i) : $this->getCoord($x + $i, $y);
             $this->boards['my'][$coord] = self::BOARD_BOAT;
             $this->lifes['my']++;
             $this->lifes['ennemy']++;
         }
     }
 
-    public function shot(): string {
-        do {
-            $x = mt_rand(0, 9);
-            $y = mt_rand(0, 9);
-            $coord = $this->getCoord($x, $y);
-        } while($this->boards['ennemy'][$coord] !== self::BOARD_WATER);
+    public function shot(string $coord = null): string {
+        if($coord === null) {
+            do {
+                $x = mt_rand(0, 9);
+                $y = mt_rand(0, 9);
+                $coord = $this->getCoord($x, $y);
+            } while($this->boards['ennemy'][$coord] !== self::BOARD_WATER);
+        }
 
         $this->boards['ennemy'][$coord] |= self::BOARD_SHOT;
         $this->myShotCoord = $coord;
