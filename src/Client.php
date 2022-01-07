@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Warship;
 
+use Exception;
+
 class Client {
     const BOARD_WATER = 1;
     const BOARD_BOAT = 2;
@@ -15,13 +17,35 @@ class Client {
     public function __construct()
     {
         $this->reset();
-        $this->setup();
     }
 
+    /**
+     * convert (X,Y) coords to ([A-J][1-10]) coords
+     */
     public static function getCoord(int $x, int $y): string {
         return chr(65 + $x) . ($y + 1);
     }
 
+    public function getBoard(string $player = 'my')
+    {
+        return $this->boards[$player];
+    }
+
+    public function displayBoard(string $player = 'my')
+    {
+        for($j = 0; $j < 10; $j++) {
+            for($i = 0; $i < 10; $i++) {
+                $coord = $this->getCoord($i, $j);
+                echo $this->boards[$player][$coord];
+            }
+            echo "\n";
+        }
+        echo "\n";
+    }
+
+    /**
+     * reset game
+     */
     public function reset(): void
     {
         $this->myShotCoord = null;
@@ -43,6 +67,9 @@ class Client {
         }
     }
 
+    /**
+     * place boats on my board
+     */
     public function setup(): void {
         $boatLengths = array(5, 4, 3, 3, 2);
         foreach($boatLengths as $boatLength) {
@@ -69,7 +96,7 @@ class Client {
 
     public function placeBoat(int $x, int $y, int $length, bool $isHorizontal) {
         for($i = 0; $i < $length; $i++) {
-            $coord = $isHorizontal ? $this->getCoord($x + $length, $y) : $this->getCoord($x, $y + $length);
+            $coord = $isHorizontal ? $this->getCoord($x + $i, $y) : $this->getCoord($x, $y + $i);
             $this->boards['my'][$coord] = self::BOARD_BOAT;
             $this->lifes['my']++;
             $this->lifes['ennemy']++;
@@ -82,15 +109,28 @@ class Client {
             $y = mt_rand(0, 9);
             $coord = $this->getCoord($x, $y);
         } while($this->boards['ennemy'][$coord] !== self::BOARD_WATER);
-        $this->boards['ennemy'][$coord] &= self::BOARD_SHOT;
+
+        $this->boards['ennemy'][$coord] |= self::BOARD_SHOT;
+        $this->myShotCoord = $coord;
 
         return $coord;
     }
 
-    public function ennemyShot($coord): string {
-        $this->boards['my'][$coord] &= self::BOARD_SHOT;
+    public function shotResponse($flag): string {
+        $this->boards['ennemy'][$this->myShotCoord] |= self::BOARD_SHOT;
+        $this->boards['ennemy'][$this->myShotCoord] |= $flag;
 
-        if($this->boards['my'][$coord] | self::BOARD_WATER) {
+        if($flag === self::BOARD_BOAT) {
+            $this->lifes['ennemy']--;
+        }
+
+        return "ok";
+    }
+
+    public function ennemyShot($coord): string {
+        $this->boards['my'][$coord] |= self::BOARD_SHOT;
+
+        if($this->boards['my'][$coord] & self::BOARD_WATER) {
             return 'miss';
         }
 
@@ -104,18 +144,15 @@ class Client {
 
     public function handleCommand($command): string {
         if ($command === 'your turn') {
-            $this->myShotCoord = $this->shot();
-            return $this->myShotCoord;
+            return $this->shot();
         } elseif (preg_match('`^([A-J])(:?)([1-9]|10)$`i', $command, $m) === 1) {
             return $this->ennemyShot($m[1].$m[3]);
         } elseif ($command === 'miss') {
-            $this->boards['ennemy'][$this->myShotCoord] &= self::BOARD_SHOT;
-            return "ok";
+            return $this->shotResponse(self::BOARD_WATER);
         } elseif (preg_match('`^hit|sunk|won$`x', $command)) {
-            $this->boards['ennemy'][$this->myShotCoord] &= self::BOARD_SHOT;
-            $this->boards['ennemy'][$this->myShotCoord] &= self::BOARD_BOAT;
-            $this->lifes['ennemy']--;
-            return "ok";
+            return $this->shotResponse(self::BOARD_WATER);
         }
+
+        throw new Exception('command not found');
     }
 }
