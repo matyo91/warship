@@ -1,17 +1,16 @@
 <?php declare(strict_types=1);
 use PHPUnit\Framework\TestCase;
-use Warship\Game;
+use Warship\Client;
 
-final class GameTest extends TestCase
+final class ClientTest extends TestCase
 {
     /**
      * @dataProvider coordsProvider
      */
     public function testCoords($x, $y, $coord): void
     {
-        $game = new Game();
-        $gameCoord = $game->getCoord($x, $y);
-        $this->assertEquals($coord, $gameCoord);
+        $clientCoord = Client::getCoord($x, $y);
+        $this->assertEquals($coord, $clientCoord);
     }
 
     public function coordsProvider()

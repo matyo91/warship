@@ -3,11 +3,12 @@ declare(strict_types=1);
 
 namespace Warship;
 
-class Game {
+class Client {
     const BOARD_WATER = 1;
     const BOARD_BOAT = 2;
     const BOARD_SHOT = 4;
 
+    private ?string $myShotCoord;
     private array $boards;
     private array $lifes;
 
@@ -17,12 +18,13 @@ class Game {
         $this->setup();
     }
 
-    public function getCoord(int $x, int $y): string {
+    public static function getCoord(int $x, int $y): string {
         return chr(65 + $x) . ($y + 1);
     }
 
     public function reset(): void
     {
+        $this->myShotCoord = null;
         $this->boards = [
             'my' => [],
             'ennemy' => []
@@ -100,21 +102,20 @@ class Game {
         return 'won';
     }
 
-    public function handleCommand($command): void {
-        $shotCoord = null;
+    public function handleCommand($command): string {
         if ($command === 'your turn') {
-            $shotCoord = $this->shot();
-            echo $shotCoord . "\n";
-        } elseif ($m = preg_match('`^([A-J])?:([1-9]|10))$`x', $command)) {
-            echo $this->ennemyShot($m[1].$m[2]) . "\n";
+            $this->myShotCoord = $this->shot();
+            return $this->myShotCoord;
+        } elseif (preg_match('`^([A-J])(:?)([1-9]|10)$`i', $command, $m) === 1) {
+            return $this->ennemyShot($m[1].$m[3]);
         } elseif ($command === 'miss') {
-            echo "ok\n";
+            $this->boards['ennemy'][$this->myShotCoord] &= self::BOARD_SHOT;
+            return "ok";
         } elseif (preg_match('`^hit|sunk|won$`x', $command)) {
-            $this->boards['ennemy'][$shotCoord] &= self::BOARD_BOAT;
+            $this->boards['ennemy'][$this->myShotCoord] &= self::BOARD_SHOT;
+            $this->boards['ennemy'][$this->myShotCoord] &= self::BOARD_BOAT;
             $this->lifes['ennemy']--;
-            echo "ok\n";
-        } else {
-            die("Can't understand '$command'\n");
+            return "ok";
         }
     }
 }

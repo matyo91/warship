@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 require __DIR__ . '/vendor/autoload.php';
 
-use Warship\Game;
+use Warship\Client;
 
-$game = new Game();
+$client = new Client();
 while (true) {
     $command = trim(fgets(STDIN));
-    $game->handleCommand($command);
+    echo $client->handleCommand($command) . "\n";
 }
