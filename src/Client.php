@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Warship;
 
 use Exception;
+use Psr\Log\LoggerInterface;
 
 class Client {
     const BOARD_WATER = 1;
@@ -14,7 +15,7 @@ class Client {
     private array $boards;
     private array $lifes;
 
-    public function __construct()
+    public function __construct(private ?LoggerInterface $logger = null)
     {
         $this->reset();
     }
@@ -33,14 +34,21 @@ class Client {
 
     public function displayBoard(string $player = 'my')
     {
+        $display = "";
         for($i = 0; $i < 10; $i++) {
             for($j = 0; $j < 10; $j++) {
                 $coord = $this->getCoord($i, $j);
-                echo $this->boards[$player][$coord];
+                $display .= $this->boards[$player][$coord];
             }
-            echo "\n";
+            $display .= "\n";
         }
-        echo "\n";
+        $display .= "\n";
+
+        if($this->logger) {
+            $this->logger->info("board $player :\n" . $display);
+        }
+
+        return $display;
     }
 
     /**
