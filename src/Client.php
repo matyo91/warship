@@ -85,7 +85,7 @@ class Client {
                 $x = mt_rand(0, 9);
                 $y = mt_rand(0, 9);
                 $isHorizontal = mt_rand(0, 1) === 0;
-            } while($this->canPlaceBoat($x, $y, $boatLength, $isHorizontal));
+            } while(!$this->canPlaceBoat($x, $y, $boatLength, $isHorizontal));
 
             $this->placeBoat($x, $y, $boatLength, $isHorizontal);
         }
