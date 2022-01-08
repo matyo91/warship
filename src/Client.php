@@ -152,7 +152,7 @@ class Client {
         } elseif ($command === 'miss') {
             return $this->shotResponse(self::BOARD_WATER);
         } elseif (preg_match('`^hit|sunk|won$`x', $command)) {
-            return $this->shotResponse(self::BOARD_WATER);
+            return $this->shotResponse(self::BOARD_BOAT);
         }
 
         throw new Exception('command not found');
