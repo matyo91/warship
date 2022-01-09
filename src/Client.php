@@ -11,9 +11,9 @@ class Client {
     const BOARD_BOAT = 2;
     const BOARD_SHOT = 4;
 
-    private ?string $myShotCoord;
     private array $boards;
     private array $lifes;
+    private ?string $myShotCoord;
 
     public function __construct(private ?LoggerInterface $logger = null)
     {
@@ -56,7 +56,6 @@ class Client {
      */
     public function reset(): void
     {
-        $this->myShotCoord = null;
         $this->boards = [
             'my' => [],
             'ennemy' => []
@@ -66,6 +65,7 @@ class Client {
             'ennemy' => 0
         ];
         
+        $this->myShotCoord = null;
         for($x = 0; $x < 10; $x++) {
             for($y = 0; $y < 10; $y++) {
                 $coord = $this->getCoord($x, $y);
@@ -111,8 +111,15 @@ class Client {
         }
     }
 
+    /**
+     * if shot coordinates are not provided, then algorithm find next coord as follow
+     * - for any hit on board, then try adjacend coord.
+     * - if no hit was found on board, then try all diagonal case coord at random.
+     * - at last try case coord at random.
+     */
     public function shot(string $coord = null): string {
         if($coord === null) {
+            // random shot strategy
             do {
                 $x = mt_rand(0, 9);
                 $y = mt_rand(0, 9);
