@@ -48,13 +48,23 @@ class Client {
         return $this->boards[$player];
     }
 
-    public function displayBoard(string $player = 'my')
+    public function displayBoard(string $player = 'my', string $mode = 'raw')
     {
         $display = "";
         for($i = 0; $i < 10; $i++) {
             for($j = 0; $j < 10; $j++) {
                 $coord = $this->getCoord($i, $j);
-                $display .= $this->boards[$player][$coord];
+                if($mode === 'raw') {
+                    $display .= $this->boards[$player][$coord];
+                } else if($mode === 'shot') {
+                    if($this->boards[$player][$coord] === (self::BOARD_WATER | self::BOARD_BOAT | self::BOARD_SHOT)) {
+                        $display .= 'X';
+                    } else if($this->boards[$player][$coord] === (self::BOARD_WATER | self::BOARD_SHOT)) {
+                        $display .= 'O';
+                    } else {
+                        $display .= ' ';
+                    }
+                }
             }
             $display .= "\n";
         }
