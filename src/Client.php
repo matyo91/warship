@@ -14,6 +14,8 @@ class Client {
     private array $boards;
     private array $lifes;
     private ?string $myShotCoord;
+    private array $adjacentLookingCoords;
+    private array $diagonalLookingCoords;
 
     public function __construct(private ?LoggerInterface $logger = null)
     {
@@ -21,10 +23,24 @@ class Client {
     }
 
     /**
-     * convert (X,Y) coords to ([A-J][1-10]) coords
+     * convert positions (X,Y) to coords ([A-J][1-10])
      */
     public static function getCoord(int $x, int $y): string {
         return chr(65 + $x) . ($y + 1);
+    }
+
+    /**
+     * convert coords ([A-J][1-10]) to positions (X,Y)
+     */
+    public static function getPosition(string $coord): array {
+        if(preg_match('`^([A-J])(:?)([1-9]|10)$`', $coord, $m) === 1) {
+            return [
+                'x' => ord($m[1]) - 65,
+                'y' => intval($m[3]) - 1,
+            ];
+        }
+
+        throw new Exception('Invalid coord provided');
     }
 
     public function getBoard(string $player = 'my')
@@ -60,12 +76,6 @@ class Client {
             'my' => [],
             'ennemy' => []
         ];
-        $this->lifes = [
-            'my' => 0,
-            'ennemy' => 0
-        ];
-        
-        $this->myShotCoord = null;
         for($x = 0; $x < 10; $x++) {
             for($y = 0; $y < 10; $y++) {
                 $coord = $this->getCoord($x, $y);
@@ -73,6 +83,19 @@ class Client {
                 $this->boards['ennemy'][$coord] = self::BOARD_WATER;
             }
         }
+        $this->lifes = [
+            'my' => 0,
+            'ennemy' => 0
+        ];
+        $this->myShotCoord = null;
+        $this->adjacentLookingCoords = [];
+        $this->diagonalLookingCoords = [];
+        for($x = 0; $x < 10; $x+=2) {
+            for($y = 0; $y < 10; $y+=2) {
+                $this->diagonalLookingCoords[] = $this->getCoord($x, $y);
+            }
+        }
+        shuffle($this->diagonalLookingCoords);
     }
 
     /**
@@ -112,19 +135,41 @@ class Client {
     }
 
     /**
-     * if shot coordinates are not provided, then algorithm find next coord as follow
-     * - for any hit on board, then try adjacend coord.
+     * ia algorithm find next coord as follow
+     * - for any hit on ennemy board, then try adjacent coord.
      * - if no hit was found on board, then try all diagonal case coord at random.
      * - at last try case coord at random.
      */
+    public function iaShot(): string {
+        // adjacent looking coords
+        while(count($this->adjacentLookingCoords) > 0) {
+            $coord = array_pop($this->adjacentLookingCoords);
+            if(isset($this->boards['ennemy'][$coord]) && $this->boards['ennemy'][$coord] === self::BOARD_WATER) {
+                return $coord;
+            }
+        }
+
+        // diagonal looking coords
+        while(count($this->diagonalLookingCoords) > 0) {
+            $coord = array_pop($this->diagonalLookingCoords);
+            if($this->boards['ennemy'][$coord] === self::BOARD_WATER) {
+                return $coord;
+            }
+        }
+
+        // random shot strategy
+        do {
+            $x = mt_rand(0, 9);
+            $y = mt_rand(0, 9);
+            $coord = $this->getCoord($x, $y);
+        } while($this->boards['ennemy'][$coord] !== self::BOARD_WATER);
+
+        return $coord;
+    }
+
     public function shot(string $coord = null): string {
         if($coord === null) {
-            // random shot strategy
-            do {
-                $x = mt_rand(0, 9);
-                $y = mt_rand(0, 9);
-                $coord = $this->getCoord($x, $y);
-            } while($this->boards['ennemy'][$coord] !== self::BOARD_WATER);
+            $coord = $this->iaShot();
         }
 
         $this->boards['ennemy'][$coord] |= self::BOARD_SHOT;
@@ -139,6 +184,13 @@ class Client {
 
         if($flag === self::BOARD_BOAT) {
             $this->lifes['ennemy']--;
+
+            $hitPosition = $this->getPosition($this->myShotCoord);
+            $this->adjacentLookingCoords[] = $this->getCoord($hitPosition['x'] + 1, $hitPosition['y'] + 0);
+            $this->adjacentLookingCoords[] = $this->getCoord($hitPosition['x'] + 0, $hitPosition['y'] + 1);
+            $this->adjacentLookingCoords[] = $this->getCoord($hitPosition['x'] - 1, $hitPosition['y'] + 0);
+            $this->adjacentLookingCoords[] = $this->getCoord($hitPosition['x'] + 0, $hitPosition['y'] - 1);
+            shuffle($this->adjacentLookingCoords);
         }
 
         return "ok";

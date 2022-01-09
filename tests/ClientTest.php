@@ -16,6 +16,16 @@ final class ClientTest extends TestCase
     }
 
     /**
+     * @dataProvider coordsProvider
+     */
+    public function testPositions($x, $y, $coord): void
+    {
+        $clientPosition = Client::getPosition($coord);
+        $this->assertEquals($x, $clientPosition['x']);
+        $this->assertEquals($y, $clientPosition['y']);
+    }
+
+    /**
      * @dataProvider playProvider
      */
     public function testPlacement(array $plays)
