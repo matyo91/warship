@@ -125,10 +125,12 @@ class Client {
     }
 
     public function canPlaceBoat(int $x, int $y, int $length, bool $isHorizontal): bool {
-        for($i = 0; $i < $length; $i++) {
-            $coord = $isHorizontal ? $this->getCoord($x, $y + $i) : $this->getCoord($x + $i, $y);
-            if(!isset($this->boards['my'][$coord]) || $this->boards['my'][$coord] !== self::BOARD_WATER) {
-                return false;
+        for($k = -1; $k < $length + 1; $k++) {
+            for($l = -1; $l <= 1; $l++) {
+                $coord = $isHorizontal ? $this->getCoord($x + $l, $y + $k) : $this->getCoord($x + $k, $y + $l);
+                if(!isset($this->boards['my'][$coord]) || $this->boards['my'][$coord] !== self::BOARD_WATER) {
+                    return false;
+                }
             }
         }
 
